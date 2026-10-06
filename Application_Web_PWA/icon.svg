@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1b5e20"/>
+  <!-- bâtiment d'élevage -->
+  <path d="M96 250 256 140l160 110v152H96z" fill="#e8f5e9"/>
+  <path d="M76 262 256 136l180 126" fill="none" stroke="#a5d6a7" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- ventilateur -->
+  <circle cx="256" cy="316" r="58" fill="#2e7d32"/>
+  <g fill="#e8f5e9">
+    <path d="M256 316c-6-28 4-48 22-52 16 4 16 30-22 52z"/>
+    <path d="M256 316c27-9 48-1 53 17-3 17-29 19-53-17z"/>
+    <path d="M256 316c-21 20-44 21-56 7-3-17 20-28 56-7z"/>
+  </g>
+  <circle cx="256" cy="316" r="10" fill="#1b5e20"/>
+</svg>

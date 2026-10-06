@@ -1,0 +1,270 @@
+[
+  {
+    "id": "avicole_tab",
+    "type": "tab",
+    "label": "Maquette avicole",
+    "disabled": false,
+    "info": "Rôle de Node-RED depuis le 24/09/2026 : historisation et module d'alerte sanitaire, en arrière-plan.\nL'interface de conduite est l'application web (dossier application_web), reliée au broker par WebSockets.\nBroker : Mosquitto, service séparé, localhost:1883."
+  },
+  {
+    "id": "avicole_broker",
+    "type": "mqtt-broker",
+    "name": "Mosquitto (local)",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "node-red-avicole",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthRetain": "false",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closeRetain": "false",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willRetain": "false",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "avicole_note",
+    "type": "comment",
+    "z": "avicole_tab",
+    "name": "Historisation et alerte sanitaire (pas de tableau de bord)",
+    "info": "L'affichage et les commandes sont assurés par l'application web.",
+    "x": 250,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "avicole_in_etat",
+    "type": "mqtt in",
+    "z": "avicole_tab",
+    "name": "avicole/etat",
+    "topic": "avicole/etat",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "avicole_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 130,
+    "y": 100,
+    "wires": [
+      [
+        "avicole_fn_csv"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_fn_csv",
+    "type": "function",
+    "z": "avicole_tab",
+    "name": "Ligne CSV",
+    "func": "// Une ligne par message d'état : horodatage UTC ; t ; hr ; consigne ; mode ; auto ; chauffage ; puissance ; ventilateur ; pompe\nconst e = msg.payload;\nconst v = x => (x === null || x === undefined) ? \"\" : x;\nmsg.payload = [new Date().toISOString(), v(e.t), v(e.hr), e.consigne, e.mode,\n               e.auto ? 1 : 0, e.chauffage, e.puissance, e.ventilateur, e.pompe].join(\";\");\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 100,
+    "wires": [
+      [
+        "avicole_file_csv"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_file_csv",
+    "type": "file",
+    "z": "avicole_tab",
+    "name": "Historique des mesures",
+    "filename": "mesures_maquette.csv",
+    "filenameType": "str",
+    "appendNewline": true,
+    "createDir": false,
+    "overwriteFile": "false",
+    "encoding": "utf8",
+    "x": 560,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "avicole_in_statut",
+    "type": "mqtt in",
+    "z": "avicole_tab",
+    "name": "avicole/statut",
+    "topic": "avicole/statut",
+    "qos": "0",
+    "datatype": "utf8",
+    "broker": "avicole_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 180,
+    "wires": [
+      [
+        "avicole_fn_liaison"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_fn_liaison",
+    "type": "function",
+    "z": "avicole_tab",
+    "name": "Ligne de liaison",
+    "func": "// Un événement par changement d'état de la liaison : horodatage UTC ; statut publié par l'ESP32\n// (« en ligne » à la connexion, « hors ligne » publié par le broker au titre du testament)\nmsg.payload = new Date().toISOString() + \";\" + msg.payload;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 180,
+    "wires": [
+      [
+        "avicole_file_liaison"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_file_liaison",
+    "type": "file",
+    "z": "avicole_tab",
+    "name": "Journal de liaison",
+    "filename": "liaison_maquette.csv",
+    "filenameType": "str",
+    "appendNewline": true,
+    "createDir": false,
+    "overwriteFile": "false",
+    "encoding": "utf8",
+    "x": 560,
+    "y": 180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "avicole_in_jour",
+    "type": "mqtt in",
+    "z": "avicole_tab",
+    "name": "avicole/lot/jour",
+    "topic": "avicole/lot/jour",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "avicole_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 280,
+    "wires": [
+      [
+        "avicole_fn_alerte"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_in_nouveau",
+    "type": "mqtt in",
+    "z": "avicole_tab",
+    "name": "avicole/lot/nouveau",
+    "topic": "avicole/lot/nouveau",
+    "qos": "0",
+    "datatype": "utf8",
+    "broker": "avicole_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 340,
+    "wires": [
+      [
+        "avicole_fn_alerte"
+      ]
+    ]
+  },
+  {
+    "id": "avicole_fn_alerte",
+    "type": "function",
+    "z": "avicole_tab",
+    "name": "Module d'alerte sanitaire",
+    "func": "// =============================================================================\n// Module d'alerte sanitaire précoce : corps du nœud fonction Node-RED\n// (portage de la fonction analyser() de scripts/alerte_sanitaire.py, vérifié par\n//  node-red/verifier_alerte.js sur les mêmes scénarios)\n//\n// Entrée (sujet avicole/lot/jour, JSON), un message par jour du lot, sans jour manquant :\n//   { \"jour\": 24, \"eau\": 118.5, \"poids\": 1.62, \"stress\": false }\n//   eau : consommation du jour ; poids : poids moyen du jour ; stress : jour de stress thermique\n// Entrée (sujet avicole/lot/nouveau) : remet l'historique à zéro au début d'un lot.\n//\n// Sorties : 1) ligne CSV pour le fichier des alertes ; 2) voyant publié sur avicole/alerte (retenu).\n// Seuils : HYPOTHÈSES à valider avec un vétérinaire, identiques au script Python.\n// =============================================================================\nconst SEUIL_EAU_ORANGE = -0.10, SEUIL_EAU_ROUGE = -0.20;    // écart relatif de la consommation d'eau\nconst SEUIL_GAIN_ORANGE = -0.30, SEUIL_GAIN_ROUGE = -0.50;  // écart relatif du gain de poids journalier\nconst SEUIL_CLIMAT = 0.10;                                   // écart d'eau signalé pendant un stress thermique\nconst NB_JOURS_TENDANCE = 5;\nconst VERT = 0, ORANGE = 1, ROUGE = 2, CLIMAT = 3;\nconst LIBELLE = [\"vert\", \"orange\", \"rouge\", \"orange\"];\nconst MESSAGE = [\"Lot normal\", \"Suspicion sanitaire : surveiller le lot\",\n                 \"Alerte sanitaire : prévenir le vétérinaire\",\n                 \"Cause climatique probable : vérifier la ventilation et le pad-cooling\"];\n\n// Extrapolation linéaire (moindres carrés) au point x à partir des points (xs, ys)\nfunction tendance(xs, ys, x) {\n    const n = xs.length;\n    const mx = xs.reduce((s, v) => s + v, 0) / n;\n    const my = ys.reduce((s, v) => s + v, 0) / n;\n    let sxy = 0, sxx = 0;\n    for (let k = 0; k < n; k++) {\n        sxy += (xs[k] - mx) * (ys[k] - my);\n        sxx += (xs[k] - mx) * (xs[k] - mx);\n    }\n    const a = sxy / sxx;\n    return a * x + (my - a * mx);\n}\n\n// Voyant et écarts relatifs jour par jour (indices = rang du jour dans le lot)\nfunction analyser(eau, poids, stress) {\n    const n = eau.length;\n    const gain = new Array(n).fill(NaN);\n    for (let i = 3; i < n; i++) gain[i] = (poids[i] - poids[i - 3]) / 3;   // gain moyen sur 3 jours\n    const voyant = new Array(n).fill(VERT);\n    const dEau = new Array(n).fill(NaN), dGain = new Array(n).fill(NaN);\n    const C = new Array(n).fill(false), F = new Array(n).fill(false);\n    for (let i = 0; i < n; i++) {\n        const candidats = [];\n        for (let k = 3; k < i; k++) if (!stress[k] && !C[k]) candidats.push(k);\n        const ref = candidats.slice(-NB_JOURS_TENDANCE);                   // 5 derniers jours normaux\n        if (ref.length < NB_JOURS_TENDANCE) continue;\n        dEau[i] = eau[i] / tendance(ref, ref.map(k => eau[k]), i) - 1;\n        dGain[i] = gain[i] / tendance(ref, ref.map(k => gain[k]), i) - 1;\n        if (stress[i]) {\n            if (Math.abs(dEau[i]) >= SEUIL_CLIMAT || dGain[i] <= SEUIL_GAIN_ORANGE) voyant[i] = CLIMAT;\n            continue;\n        }\n        C[i] = dEau[i] <= SEUIL_EAU_ORANGE || dGain[i] <= SEUIL_GAIN_ORANGE;\n        F[i] = dEau[i] <= SEUIL_EAU_ROUGE || dGain[i] <= SEUIL_GAIN_ROUGE;\n        const c1 = i >= 1 && C[i - 1];\n        const c2 = i >= 2 && C[i - 2];\n        if ((F[i] && c1) || (C[i] && c1 && c2)) voyant[i] = ROUGE;\n        else if (F[i] || (C[i] && c1)) voyant[i] = ORANGE;\n    }\n    return { voyant, dEau, dGain };\n}\n\n// ----------------------------------------------------------------------------- traitement du message\nif (msg.topic === \"avicole/lot/nouveau\") {\n    flow.set(\"lot\", { jour: [], eau: [], poids: [], stress: [] });\n    node.status({ fill: \"grey\", shape: \"ring\", text: \"nouveau lot\" });\n    return null;\n}\n\nconst j = msg.payload;\nif (!j || typeof j.jour !== \"number\" || typeof j.eau !== \"number\" || typeof j.poids !== \"number\") {\n    node.warn(\"Message journalier incomplet : \" + JSON.stringify(j));\n    return null;\n}\nconst lot = flow.get(\"lot\") || { jour: [], eau: [], poids: [], stress: [] };\nconst rang = lot.jour.indexOf(j.jour);\nif (rang >= 0) {                                   // jour déjà reçu : la nouvelle valeur remplace l'ancienne\n    lot.eau[rang] = j.eau; lot.poids[rang] = j.poids; lot.stress[rang] = !!j.stress;\n} else {\n    lot.jour.push(j.jour); lot.eau.push(j.eau); lot.poids.push(j.poids); lot.stress.push(!!j.stress);\n}\nflow.set(\"lot\", lot);\n\nconst r = analyser(lot.eau, lot.poids, lot.stress);\nconst i = lot.jour.indexOf(j.jour);\nconst v = r.voyant[i];\nconst pct = x => (Number.isNaN(x) ? null : Math.round(1000 * x) / 10);   // écart en %, une décimale\nconst resultat = {\n    jour: j.jour, voyant: LIBELLE[v], climatique: v === CLIMAT, message: MESSAGE[v],\n    ecart_eau: pct(r.dEau[i]), ecart_gain: pct(r.dGain[i])\n};\nnode.status({ fill: [\"green\", \"yellow\", \"red\", \"yellow\"][v], shape: \"dot\", text: \"jour \" + j.jour + \" : \" + resultat.voyant });\n\nconst ligne = [new Date().toISOString(), j.jour, j.eau, j.poids, j.stress ? 1 : 0,\n               resultat.ecart_eau ?? \"\", resultat.ecart_gain ?? \"\", resultat.voyant, resultat.message].join(\";\");\nreturn [{ payload: ligne }, { topic: \"avicole/alerte\", payload: resultat, retain: true }];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 300,
+    "wires": [
+      [
+        "avicole_file_alertes"
+      ],
+      [
+        "avicole_out_alerte"
+      ]
+    ],
+    "outputLabels": [
+      "ligne CSV",
+      "voyant (avicole/alerte)"
+    ]
+  },
+  {
+    "id": "avicole_file_alertes",
+    "type": "file",
+    "z": "avicole_tab",
+    "name": "Historique des alertes",
+    "filename": "alertes_sanitaires.csv",
+    "filenameType": "str",
+    "appendNewline": true,
+    "createDir": false,
+    "overwriteFile": "false",
+    "encoding": "utf8",
+    "x": 640,
+    "y": 280,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "avicole_out_alerte",
+    "type": "mqtt out",
+    "z": "avicole_tab",
+    "name": "Voyant vers l'application",
+    "topic": "",
+    "qos": "1",
+    "retain": "",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "avicole_broker",
+    "x": 650,
+    "y": 340,
+    "wires": []
+  }
+]

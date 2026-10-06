@@ -1,0 +1,15 @@
+{
+  "name": "Poulailler intelligent",
+  "short_name": "Poulailler",
+  "description": "Supervision et commande du contrôleur avicole ESP32 par MQTT",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6f1",
+  "theme_color": "#1b5e20",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
